@@ -94,7 +94,8 @@ class CrayonController extends Controller
 
     public function search(Request $request){
         $crayons = DB::table('crayons')
-            ->where('nom', 'like', DB::raw('"%' . $request->texte . '%"'))
+            //CORRECTION POUR L'INJECTION SQL
+            ->where('nom', 'like', '%'. $request->texte . '%')
             ->get();
         return view('crayons.index', compact('crayons'));
     }
