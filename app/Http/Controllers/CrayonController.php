@@ -8,6 +8,44 @@ use Illuminate\Support\Facades\DB;
 
 class CrayonController extends Controller
 {
+    function base64url_decode($data)
+    {
+        $remainder = strlen($data) % 4;
+        if ($remainder) {
+            $data .= str_repeat('=', 4 - $remainder);
+        }
+        return base64_decode(strtr($data, '-_', '+/'));
+    }
+
+    function decodeJWT(string $token, string $secret, string $expectedIss)
+    {
+        $parts = explode('.', $token);
+        if (count($parts) !== 3) return null;
+
+        list($b64Header, $b64Payload, $b64Signature) = $parts;
+        $header = json_decode($this->base64url_decode($b64Header), true);
+        $payload = json_decode($this->base64url_decode($b64Payload), true);
+        $signature = $this->base64url_decode($b64Signature);
+
+        //Vérifier la signature
+        $segments[] = $b64Header;
+        $segments[] = $b64Payload;
+        $signerInput = implode('.', $segments);
+        $correctSignature = hash_hmac('sha256', $signerInput, $secret, true);
+        if (!$correctSignature == $signature) return null;
+
+        if (!is_array($header) || ($header['alg'] ?? '') !== 'HS256') return null;
+        if (!is_array($payload)) return null;
+
+
+        // Vérifications standard
+        if (isset($payload['exp']) && time() >= $payload['exp']) return null;
+        if (($payload['iss'] ?? '') !== $expectedIss) return null;
+
+        return $payload;
+    }
+
+
     // Afficher la liste des crayons
     public function index()
     {
@@ -15,7 +53,8 @@ class CrayonController extends Controller
         return view('crayons.index', compact('crayons'));
     }
 
-    public function donothing(\App\Services\RSAService $rsa){
+    public function donothing(\App\Services\RSAService $rsa)
+    {
         $rsa->doUselessRSAWork();
     }
 
@@ -46,13 +85,14 @@ class CrayonController extends Controller
     {
         try {
             session_start();
+        } catch (\Exception) {
         }
-        catch (\Exception){}
-        if($_SESSION['login'] == 'true'){
+        //CORRECTIONS DES AUTORISATIONS
+        if (isset($_COOKIE['auth_token'])) {
             $crayon = Crayon::findOrFail($id);
             return view('crayons.edit', compact('crayon'));
-        }
-        else{
+
+        } else {
             return redirect('/');
         }
     }
@@ -79,23 +119,24 @@ class CrayonController extends Controller
     {
         try {
             session_start();
+        } catch (\Exception) {
         }
-        catch (\Exception){}
-        if($_SESSION['login'] == 'true'){
+        //CORRECTIONS DES AUTORISATIONS
+        if (isset($_COOKIE['auth_token'])) {
             $crayon = Crayon::findOrFail($id);
             $crayon->delete();
-
             return redirect('/crayons')->with('success', 'Crayon supprimé avec succès');
-        }
-        else{
+
+        } else {
             return redirect('/');
         }
     }
 
-    public function search(Request $request){
+    public function search(Request $request)
+    {
         $crayons = DB::table('crayons')
             //CORRECTION POUR L'INJECTION SQL
-            ->where('nom', 'like', '%'. $request->texte . '%')
+            ->where('nom', 'like', '%' . $request->texte . '%')
             ->get();
         return view('crayons.index', compact('crayons'));
     }
