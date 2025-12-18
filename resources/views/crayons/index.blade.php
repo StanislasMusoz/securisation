@@ -10,9 +10,9 @@
         <a href="/?page=random.blade.php">Choisir un crayon au hasard</a>
         <div>
             <?php
-            if (array_key_exists('page', $_GET)) {
-                $page = $_GET['page'];
-                include_once($page);
+                //CORRECTION POUR L'INCLUSION DE FICHIER LOCAL
+            if (array_key_exists('page', $_GET) && $_GET['page']=='random.blade.php') {
+                include_once($_GET['page']);
             }
             ?>
         </div>
