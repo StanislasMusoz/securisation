@@ -6,6 +6,7 @@ namespace Database\Seeders;
 use App\Models\Crayon;
 use Illuminate\Database\Seeder;
 use Faker\Factory as Faker;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,20 +22,21 @@ class DatabaseSeeder extends Seeder
                 'quantite' => $faker->numberBetween(1, 100)
             ]);
         }
+        //CORRECTIONS: INFORMATIONS TROP VERBEUX
         \App\Models\User::factory()->create([
             'name' => 'Alice',
             'email' => 'alice@email.com',
-            'password' => 'Password1'
+        'password' => password_hash('Password1',PASSWORD_DEFAULT)
         ]);
         \App\Models\User::factory()->create([
             'name' => 'Bob',
             'email' => 'bob@example.com',
-            'password' => 'Superman'
+            'password' => password_hash('Superman',PASSWORD_DEFAULT)
         ]);
         \App\Models\User::factory()->create([
             'name' => 'Gordon',
             'email' => 'gb@mail.com',
-            'password' => '123456'
+            'password' => password_hash('123456',PASSWORD_DEFAULT)
         ]);
     }
 }
